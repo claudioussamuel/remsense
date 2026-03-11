@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Mail, Phone, MapPin } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
@@ -28,20 +29,43 @@ export function ContactForm() {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate form submission
-    setTimeout(() => {
-      setSubmitted(true)
-      setLoading(false)
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        organization: '',
-        message: '',
+    try {
+      const response = await fetch('https://email-sender-two-self.vercel.app/api/remsense/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullname: formData.name,
+          PhoneNumber: formData.phone,
+          Email: formData.email,
+          Farmname: formData.organization,
+          Message: formData.message,
+        }),
       })
-      // Reset success message after 5 seconds
-      setTimeout(() => setSubmitted(false), 5000)
-    }, 1000)
+
+      if (response.ok) {
+        setSubmitted(true)
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          organization: '',
+          message: '',
+        })
+        toast.success('Message sent successfully!')
+        // Reset success message after 5 seconds
+        setTimeout(() => setSubmitted(false), 5000)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.message || 'Failed to send message. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      toast.error('An error occurred. Please try again later.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
